@@ -24,7 +24,31 @@ def softmax_loss_naive(W, X, y, reg):
   # here, it is easy to run into numeric instability. Don't forget the        #
   # regularization!                                                           #
   #############################################################################
-  pass
+  (num_class, D), (D, num_train) = (W.shape, X.shape)
+  class_scores = np.dot(W, X)
+  
+  # Subtract maximum unnormalized score from each set of class scores
+  for i in range(num_train):
+    max_class_score = np.max(class_scores[:, i])
+    for j in range(num_class):
+      class_scores[j, i] -= max_class_score
+    
+  # Compute softmax and update gradient
+  for i in range(num_train):
+    normalization_term = sum(np.exp(class_score) for class_score in class_scores[:, i])
+    for j in range(num_class):
+      class_scores[j, i] = np.exp(class_scores[j, i]) / normalization_term
+      # Thanks again to MyHumbleSelf for making me examine this further and discover a bug in my derivation of the softmax gradient!
+      dW[j] += (class_scores[j, i] - (j==y[i])) * X[:, i]
+    
+  # Compute cross-entropy errors and total loss from that
+  losses = [np.log(class_scores[y[i], i]) for i in range(num_train)]
+  loss = -sum(losses) / num_train
+
+  # Add regularization to loss and normalize dW
+  loss += 0.5 * reg * np.sum(W * W)
+  dW /= num_train
+  dW += reg * W
   #############################################################################
   #                          END OF YOUR CODE                                 #
   #############################################################################
