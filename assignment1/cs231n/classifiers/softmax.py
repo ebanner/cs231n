@@ -66,13 +66,38 @@ def softmax_loss_vectorized(W, X, y, reg):
   loss = 0.0
   dW = np.zeros_like(W)
 
+  # Compute class scores
+  (num_class, D), (D, num_train) = W.shape, X.shape
+  class_scores = np.dot(W, X)
+
+  # Softmax them
+  e_x = np.exp(class_scores - class_scores.max(axis=0))
+  class_scores = e_x / e_x.sum(axis=0)
+  
+  # Create mask of ys
+  gold_class_matrix = np.zeros((num_class, num_train))
+  gold_class_matrix[y, range(num_train)] = 1
   #############################################################################
   # TODO: Compute the softmax loss and its gradient using no explicit loops.  #
   # Store the loss in loss and the gradient in dW. If you are not careful     #
   # here, it is easy to run into numeric instability. Don't forget the        #
   # regularization!                                                           #
   #############################################################################
-  pass
+  # Cross entropy loss
+  loss = -(gold_class_matrix * np.log(class_scores)).sum()
+    
+  # Add regularization and normalize
+  loss += 0.5 * reg * np.sum(W * W)
+  loss /= num_train
+    
+  # Gradients
+  augmented_scores = class_scores - gold_class_matrix
+  (num_class, num_train), (num_train, D) = augmented_scores.shape, X.T.shape
+  dW = np.dot(augmented_scores, X.T)
+    
+  # Add regularization and normalize
+  dW += reg * W
+  dW /= num_train
   #############################################################################
   #                          END OF YOUR CODE                                 #
   #############################################################################
