@@ -16,22 +16,23 @@ def affine_forward(x, w, b):
   Returns a tuple of:
   - out: output, of shape (N, M)
   - cache: (x, w, b)
+
   """
-  out = None
-  
-  assert False
+  N, D = x.shape[0], np.prod(x.shape[1:])
 
   #############################################################################
   # TODO: Implement the affine forward pass. Store the result in out. You     #
   # will need to reshape the input into rows.                                 #
   #############################################################################
-  pass
+  x_rows = x.reshape(N, D)
+  out = np.dot(x_rows, w) + b
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
-  cache = (x, w, b)
-  return out, cache
 
+  cache = (x, w, b)
+
+  return out, cache
 
 def affine_backward(dout, cache):
   """
@@ -47,18 +48,24 @@ def affine_backward(dout, cache):
   - dx: Gradient with respect to x, of shape (N, d1, ..., d_k)
   - dw: Gradient with respect to w, of shape (D, M)
   - db: Gradient with respect to b, of shape (M,)
+
   """
   x, w, b = cache
-  dx, dw, db = None, None, None
+
+  N, D = x.shape[0], np.prod(x.shape[1:])
   #############################################################################
   # TODO: Implement the affine backward pass.                                 #
   #############################################################################
-  pass
+  x_rows = x.reshape(N, D)
+
+  dx = np.dot(dout, w.T)
+  dw = np.dot(x_rows.T, dout)
+  db = dout.sum(axis=0)
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
-  return dx, dw, db
 
+  return dx.reshape(*x.shape), dw, db
 
 def relu_forward(x):
   """
