@@ -165,7 +165,7 @@ def conv_forward_naive(x, w, b, conv_param):
   out = np.zeros((N, F, H_, W_))
   for k, img in enumerate(x):
     # Pad with zeros
-    x_padded = np.pad(img, ([0], [1], [1]), mode='constant', constant_values=0)
+    x_padded = np.pad(img, ([0], [pad], [pad]), mode='constant', constant_values=0)
 
     # Activations for single image
     a = np.zeros((F, H_, W_))
@@ -197,17 +197,47 @@ def conv_backward_naive(dout, cache):
   - dx: Gradient with respect to x
   - dw: Gradient with respect to w
   - db: Gradient with respect to b
+
   """
-  dx, dw, db = None, None, None
   #############################################################################
   # TODO: Implement the convolutional backward pass.                          #
   #############################################################################
-  pass
+  x, w, b, conv_param = cache
+
+  S, pad = conv_param['stride'], conv_param['pad']
+
+  N, C, H, W = x.shape
+  N, F, H_, W_ = dout.shape
+  F, C, HH, WW = w.shape
+
+  # Padding
+  H += 2*pad
+  W += 2*pad
+
+  dx, dw, db = np.zeros((N, C, H, W)), np.zeros((F, C, HH, WW)), np.zeros(F)
+  #
+  # Loop over pairs of (image, activation) gradient pairs
+  #
+  for k, (img, da) in enumerate(zip(x, dout)):
+    #
+    # Compute gradients for this pair
+    #
+    x_padded = np.pad(img, ([0], [1], [1]), mode='constant', constant_values=0)
+    for i in range(H_):
+      for j in range(W_):
+        da_ = da[:, i:i+1, j:j+1] # activations by all the filters for this little segment
+        idx, jdx = S*i, S*j # retrive coordinates back in the image
+        x_ = x_padded[:, idx:idx+HH, jdx:jdx+WW] # slice of original image
+
+        db += da_.flatten()
+        full_da = np.ones((F, C, HH, WW)) * da_.reshape(F, 1, 1, 1) # broadcast to achieve dim of scores
+        dx[k, :, idx:idx+HH, jdx:jdx+WW] += np.sum(w*full_da, axis=0)
+        dw += x_ * full_da # x_padded broadcasted to multiply all filters
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
-  return dx, dw, db
 
+  return dx[:, :, pad:H-pad, pad:W-pad], dw, db # remove padding
 
 def max_pool_forward_naive(x, pool_param):
   """
