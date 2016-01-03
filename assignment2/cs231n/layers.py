@@ -253,18 +253,37 @@ def max_pool_forward_naive(x, pool_param):
   Returns a tuple of:
   - out: Output data
   - cache: (x, pool_param)
+
   """
-  out = None
   #############################################################################
   # TODO: Implement the max pooling forward pass                              #
   #############################################################################
-  pass
+  pool_height, pool_width = pool_param['pool_height'], pool_param['pool_width']
+  stride = pool_param['stride']
+
+  N, C, H, W = x.shape
+  pooled_height, pooled_width = (H-pool_height)/stride + 1, (W-pool_width)/stride + 1
+
+  out = np.zeros((N, C, pooled_height, pooled_width))
+  for k, img in enumerate(x):
+    #
+    # Max pools for single activation volume
+    #
+    a = np.zeros((C, pooled_height, pooled_width))
+    for i, ii in enumerate(range(0, H-pool_height+1, stride)):
+      for j, jj in enumerate(range(0, W-pool_width+1, stride)):
+        x_ = img[:, ii:ii+pool_height, jj:jj+pool_width] # extract little volume piece
+
+        maximum = x_.max(axis=(1, 2), keepdims=True) # maximum along the slices
+        a[:, i:i+1, j:j+1] = maximum
+
+    out[k] = a # fill in activations for this image
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
   cache = (x, pool_param)
-  return out, cache
 
+  return out, cache
 
 def max_pool_backward_naive(dout, cache):
   """
