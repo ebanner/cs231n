@@ -77,16 +77,21 @@ def relu_forward(x):
   Returns a tuple of:
   - out: Output, of the same shape as x
   - cache: x
+
   """
   out = None
   #############################################################################
   # TODO: Implement the ReLU forward pass.                                    #
   #############################################################################
-  pass
+  mask = np.ones_like(x)
+  mask[x < 0] = 0
+
+  out = mask * x
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
   cache = x
+
   return out, cache
 
 
@@ -100,15 +105,21 @@ def relu_backward(dout, cache):
 
   Returns:
   - dx: Gradient with respect to x
+
   """
   dx, x = None, cache
+
   #############################################################################
   # TODO: Implement the ReLU backward pass.                                   #
   #############################################################################
-  pass
+  mask = np.ones_like(dout)
+  mask[x < 0] = 0
+
+  dx = mask * dout
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
+
   return dx
 
 
