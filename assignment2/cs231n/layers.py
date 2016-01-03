@@ -129,7 +129,7 @@ def conv_forward_naive(x, w, b, conv_param):
 
   The input consists of N data points, each with C channels, height H and width
   W. We convolve each input with F different filters, where each filter spans
-  all C channels and has height HH and width HH.
+  all C channels and has height HH and width WW.
 
   Input:
   - x: Input data of shape (N, C, H, W)
@@ -145,19 +145,45 @@ def conv_forward_naive(x, w, b, conv_param):
     H' = 1 + (H + 2 * pad - HH) / stride
     W' = 1 + (W + 2 * pad - WW) / stride
   - cache: (x, w, b, conv_param)
+
   """
-  out = None
   #############################################################################
   # TODO: Implement the convolutional forward pass.                           #
   # Hint: you can use the function np.pad for padding.                        #
   #############################################################################
-  pass
+  stride, pad = conv_param['stride'], conv_param['pad']
+
+  N, C, H, W = x.shape
+  F, C, HH, WW = w.shape
+
+  # Padding
+  H += 2*pad
+  W += 2*pad
+
+  H_, W_ = (H-HH)/stride + 1, (W-WW)/stride + 1
+
+  out = np.zeros((N, F, H_, W_))
+  for k, img in enumerate(x):
+    # Pad with zeros
+    x_padded = np.pad(img, ([0], [1], [1]), mode='constant', constant_values=0)
+
+    # Activations for single image
+    a = np.zeros((F, H_, W_))
+    for i, ii in enumerate(range(0, H-HH+1, stride)):
+      for j, jj in enumerate(range(0, W-WW+1, stride)):
+        x_ = x_padded[:, ii:ii+HH, jj:jj+WW]
+        
+        convolved = x_ * w # x_ broadcasted to multiply all filters
+        filter_sums = convolved.sum(axis=(1, 2, 3)) + b # sum up convolutions from all filters
+        a[:, i:i+1, j:j+1] = filter_sums.reshape(F, 1, 1) # give sums depth
+
+    out[k] = a # fill in activations for this image
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
   cache = (x, w, b, conv_param)
-  return out, cache
 
+  return out, cache
 
 def conv_backward_naive(dout, cache):
   """
