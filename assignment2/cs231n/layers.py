@@ -295,17 +295,39 @@ def max_pool_backward_naive(dout, cache):
 
   Returns:
   - dx: Gradient with respect to x
-  """
-  dx = None
-  #############################################################################
-  # TODO: Implement the max pooling backward pass                             #
-  #############################################################################
-  pass
-  #############################################################################
-  #                             END OF YOUR CODE                              #
-  #############################################################################
-  return dx
 
+  """
+  x, pool_param = cache
+
+  pool_height, pool_width = pool_param['pool_height'], pool_param['pool_width']
+  S = pool_param['stride']
+
+  N, C, H, W = x.shape
+  N, F, pooled_height, pooled_width = dout.shape
+
+  dx = np.zeros_like(x)
+  #
+  # Loop over pairs of (image, activation-gradient) pairs
+  #
+  for k, (img, da) in enumerate(zip(x, dout)):
+    #
+    # Compute gradients for this pair
+    #
+    dimg, dcube = np.zeros_like(img), np.zeros((F, pool_height, pool_width))
+    for i in range(pooled_height):
+      for j in range(pooled_width):
+        idx, jdx = S*i, S*j # coordinates in image-space
+        x_ = img[:, idx:idx+pool_height, jdx:jdx+pool_width] # slice of original image
+        dcube = np.zeros((F, pool_height, pool_width))
+
+        maximums = x_.max(axis=(1, 2), keepdims=True) # maximums in each of the slices
+        dcube[x_ == maximums] = da[:, i, j] # only let the gradient through these maximums
+        
+        dimg[:, idx:idx+pool_height, jdx:jdx+pool_width] += dcube
+
+    dx[k] = dimg
+
+  return dx
 
 def svm_loss(x, y):
   """
