@@ -52,7 +52,7 @@ class ClassifierTrainer(object):
     - val_acc_history: List storing the validation set accuracy at each epoch.
     """
 
-    N, D = X.shape
+    N, D, _, _ = X.shape
 
     if sample_batches:
       iterations_per_epoch = N / batch_size # using SGD
